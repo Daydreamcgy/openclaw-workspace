@@ -1,0 +1,21 @@
+{
+  "baseUrl": "https://generativelanguage.googleapis.com/v1beta",
+  "apiKey": "AIzaSyDDNwtYUdLifw4Hh6PQMxqDzAQuDrkWHiM",
+  "api": "google-genai",
+  "models": [
+    {
+      "id": "gemini-1.5-flash",
+      "name": "Gemini 1.5 Flash",
+      "reasoning": false,
+      "input": ["text"],
+      "cost": {
+        "input": 0.000075,
+        "output": 0.0003,
+        "cacheRead": 0,
+        "cacheWrite": 0
+      },
+      "contextWindow": 1000000,
+      "maxTokens": 8192
+    }
+  ]
+}

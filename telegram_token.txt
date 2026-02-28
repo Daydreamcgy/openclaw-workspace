@@ -1,0 +1,4 @@
+# Telegram Bot Token - 请妥善保管，不要分享
+# Bot: GY_xia_zai_bot (t.me/GY_xia_zai_bot)
+# Created: 2026-02-27
+Token: 8712552363:AAF_5Y1k-0vBt--9MpZKjrtm5WGSNlPErA4

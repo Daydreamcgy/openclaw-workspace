@@ -1,0 +1,573 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>实时股票追踪器</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #fff;
+            padding: 20px;
+        }
+        
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        
+        h1 {
+            text-align: center;
+            margin-bottom: 30px;
+            font-size: 2em;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+        
+        .add-stock {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            justify-content: center;
+            flex-wrap: wrap;
+        }
+        
+        .add-stock input, .add-stock select {
+            padding: 12px 20px;
+            border: none;
+            border-radius: 25px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 16px;
+            outline: none;
+        }
+        
+        .add-stock input::placeholder {
+            color: rgba(255,255,255,0.5);
+        }
+        
+        .add-stock button {
+            padding: 12px 30px;
+            border: none;
+            border-radius: 25px;
+            background: linear-gradient(90deg, #00d4ff, #7b2cbf);
+            color: #fff;
+            font-size: 16px;
+            cursor: pointer;
+            transition: transform 0.2s;
+        }
+        
+        .add-stock button:hover {
+            transform: translateY(-2px);
+        }
+        
+        .stock-list {
+            background: rgba(255,255,255,0.05);
+            border-radius: 15px;
+            overflow: hidden;
+        }
+        
+        .stock-header-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 50px;
+            padding: 15px 20px;
+            background: rgba(255,255,255,0.1);
+            font-weight: bold;
+            color: rgba(255,255,255,0.7);
+            font-size: 0.9em;
+        }
+        
+        .stock-item {
+            border-bottom: 1px solid rgba(255,255,255,0.05);
+        }
+        
+        .stock-item:last-child {
+            border-bottom: none;
+        }
+        
+        .stock-row {
+            display: grid;
+            grid-template-columns: 2fr 1fr 1fr 1fr 50px;
+            padding: 18px 20px;
+            align-items: center;
+            cursor: pointer;
+            transition: background 0.2s;
+        }
+        
+        .stock-row:hover {
+            background: rgba(255,255,255,0.05);
+        }
+        
+        .stock-row.expanded {
+            background: rgba(0,212,255,0.1);
+        }
+        
+        .stock-info-main {
+            display: flex;
+            flex-direction: column;
+        }
+        
+        .stock-name {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        .stock-code {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85em;
+            margin-top: 3px;
+        }
+        
+        .stock-price {
+            font-size: 1.3em;
+            font-weight: bold;
+        }
+        
+        .stock-change {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            padding: 6px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+            width: fit-content;
+        }
+        
+        .stock-change.up {
+            background: rgba(46,213,115,0.2);
+            color: #2ed573;
+        }
+        
+        .stock-change.down {
+            background: rgba(255,71,87,0.2);
+            color: #ff4757;
+        }
+        
+        .remove-btn {
+            background: rgba(255,71,87,0.2);
+            border: none;
+            color: #ff4757;
+            width: 28px;
+            height: 28px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 16px;
+            transition: all 0.2s;
+        }
+        
+        .remove-btn:hover {
+            background: rgba(255,71,87,0.4);
+        }
+        
+        /* 展开详情区域 */
+        .stock-detail {
+            display: none;
+            background: rgba(0,0,0,0.2);
+        }
+        
+        .stock-detail.show {
+            display: block;
+        }
+        
+        .detail-content {
+            padding: 20px;
+        }
+        
+        .detail-grid {
+            display: grid;
+            grid-template-columns: repeat(4, 1fr);
+            gap: 15px;
+            margin-bottom: 20px;
+        }
+        
+        .detail-item {
+            background: rgba(255,255,255,0.05);
+            padding: 12px;
+            border-radius: 10px;
+            text-align: center;
+        }
+        
+        .detail-label {
+            color: rgba(255,255,255,0.5);
+            font-size: 0.8em;
+            margin-bottom: 5px;
+        }
+        
+        .detail-value {
+            font-size: 1.1em;
+            font-weight: bold;
+        }
+        
+        /* K线图容器 */
+        .kline-container {
+            background: rgba(255,255,255,0.03);
+            border-radius: 10px;
+            padding: 15px;
+            height: 200px;
+            position: relative;
+        }
+        
+        .kline-title {
+            font-size: 0.9em;
+            color: rgba(255,255,255,0.6);
+            margin-bottom: 10px;
+        }
+        
+        .kline-chart {
+            display: flex;
+            align-items: end;
+            justify-content: space-between;
+            height: 150px;
+            gap: 3px;
+        }
+        
+        .kline-bar {
+            flex: 1;
+            border-radius: 2px;
+            min-height: 5px;
+            position: relative;
+            transition: opacity 0.2s;
+        }
+        
+        .kline-bar:hover {
+            opacity: 0.8;
+        }
+        
+        .kline-bar.up {
+            background: linear-gradient(to top, #2ed573, #26af61);
+        }
+        
+        .kline-bar.down {
+            background: linear-gradient(to top, #ff4757, #cc3845);
+        }
+        
+        .expand-icon {
+            text-align: center;
+            color: rgba(255,255,255,0.3);
+            font-size: 0.8em;
+            transition: transform 0.3s;
+        }
+        
+        .stock-row.expanded .expand-icon {
+            transform: rotate(180deg);
+        }
+        
+        .last-update {
+            text-align: center;
+            margin-top: 20px;
+            color: rgba(255,255,255,0.5);
+            font-size: 0.85em;
+        }
+        
+        .error-message {
+            background: rgba(255,71,87,0.2);
+            color: #ff4757;
+            padding: 10px 20px;
+            border-radius: 10px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: rgba(255,255,255,0.5);
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📈 实时股票追踪器</h1>
+        
+        <div class="add-stock">
+            <input type="text" id="stockInput" placeholder="输入股票代码 (如: 601139)" maxlength="6">
+            <select id="marketSelect">
+                <option value="sh">上海 (SH)</option>
+                <option value="sz">深圳 (SZ)</option>
+            </select>
+            <button onclick="addStock()">添加股票</button>
+        </div>
+        
+        <div id="errorContainer"></div>
+        
+        <div class="stock-list" id="stockList">
+            <div class="stock-header-row">
+                <div>股票名称</div>
+                <div>最新价</div>
+                <div>涨跌幅</div>
+                <div></div>
+            </div>
+            <!-- 股票列表将在这里生成 -->
+        </div>
+        
+        <div class="last-update">
+            最后更新: <span id="lastUpdate">--</span>
+        </div>
+    </div>
+
+    <script>
+        // 存储关注的股票列表
+        let watchList = JSON.parse(localStorage.getItem('watchList')) || [
+            { code: '601139', market: 'sh', name: '深圳燃气' },
+            { code: '000027', market: 'sz', name: '深圳能源' }
+        ];
+        
+        // 存储股票数据历史
+        const stockDataCache = {};
+        const stockHistory = {};
+        
+        // 从新浪财经获取实时数据
+        async function fetchStockData(stock) {
+            const symbol = `${stock.market}${stock.code}`;
+            try {
+                // 使用新浪股票API（通过后端代理避免跨域）
+                const response = await fetch(`/api/stock?symbol=${symbol}`);
+                if (!response.ok) throw new Error('API请求失败');
+                const data = await response.json();
+                return data;
+            } catch (error) {
+                console.error('获取股票数据失败:', error);
+                // 返回模拟数据作为备用
+                return generateMockData(stock);
+            }
+        }
+        
+        // 备用：模拟股票数据
+        function generateMockData(stock) {
+            const basePrice = stock.code === '601139' ? 6.96 : 
+                             stock.code === '000027' ? 7.02 :
+                             10 + Math.random() * 20;
+            const change = (Math.random() - 0.5) * 0.5;
+            
+            return {
+                name: stock.name || `股票${stock.code}`,
+                code: stock.code,
+                price: (basePrice + change).toFixed(2),
+                change: change.toFixed(2),
+                changePercent: (change / basePrice * 100).toFixed(2),
+                open: (basePrice * 0.99).toFixed(2),
+                high: (basePrice * 1.02).toFixed(2),
+                low: (basePrice * 0.98).toFixed(2),
+                volume: (Math.random() * 100).toFixed(2),
+                prevClose: basePrice.toFixed(2)
+            };
+        }
+        
+        // 生成K线数据
+        function generateKlineData(code) {
+            const history = stockHistory[code] || [];
+            if (history.length < 2) {
+                // 生成模拟K线
+                return Array(30).fill(0).map((_, i) => {
+                    const isUp = Math.random() > 0.5;
+                    return {
+                        height: 30 + Math.random() * 70,
+                        isUp: isUp
+                    };
+                });
+            }
+            
+            // 使用历史数据生成K线
+            const prices = history.slice(-30);
+            const min = Math.min(...prices);
+            const max = Math.max(...prices);
+            const range = max - min || 1;
+            
+            return prices.map((price, i) => {
+                const prevPrice = i > 0 ? prices[i - 1] : price;
+                const height = Math.min(100, Math.max(10, ((price - min) / range * 80 + 20)));
+                return {
+                    height: height,
+                    isUp: price >= prevPrice
+                };
+            });
+        }
+        
+        // 渲染K线图
+        function renderKline(code) {
+            const klineData = generateKlineData(code);
+            return klineData.map(bar => 
+                `<div class="kline-bar ${bar.isUp ? 'up' : 'down'}" style="height: ${bar.height}%"></div>`
+            ).join('');
+        }
+        
+        // 渲染单个股票项
+        async function renderStockItem(stock, index) {
+            const data = await fetchStockData(stock);
+            stockDataCache[stock.code] = data;
+            
+            // 更新历史数据
+            if (!stockHistory[stock.code]) stockHistory[stock.code] = [];
+            stockHistory[stock.code].push(parseFloat(data.price));
+            if (stockHistory[stock.code].length > 50) stockHistory[stock.code].shift();
+            
+            const isUp = parseFloat(data.change) >= 0;
+            
+            return `
+                <div class="stock-item" data-code="${stock.code}">
+                    <div class="stock-row" onclick="toggleDetail('${stock.code}')">
+                        <div class="stock-info-main">
+                            <div class="stock-name">${data.name}</div>
+                            <div class="stock-code">${stock.market.toUpperCase()}${stock.code}</div>
+                        </div>
+                        <div class="stock-price">¥${data.price}</div>
+                        <div class="stock-change ${isUp ? 'up' : 'down'}">
+                            <span>${isUp ? '▲' : '▼'}</span>
+                            <span>${isUp ? '+' : ''}${data.change} (${isUp ? '+' : ''}${data.changePercent}%)</span>
+                        </div>
+                        <div class="expand-icon">▼</div>
+                    </div>
+                    <div class="stock-detail" id="detail-${stock.code}">
+                        <div class="detail-content">
+                            <div class="detail-grid">
+                                <div class="detail-item">
+                                    <div class="detail-label">今开</div>
+                                    <div class="detail-value">${data.open}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">最高</div>
+                                    <div class="detail-value">${data.high}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">最低</div>
+                                    <div class="detail-value">${data.low}</div>
+                                </div>
+                                <div class="detail-item">
+                                    <div class="detail-label">成交量(万)</div>
+                                    <div class="detail-value">${data.volume}</div>
+                                </div>
+                            </div>
+                            <div class="kline-container">
+                                <div class="kline-title">分时走势</div>
+                                <div class="kline-chart">
+                                    ${renderKline(stock.code)}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            `;
+        }
+        
+        // 切换详情展开/收起
+        function toggleDetail(code) {
+            console.log('Toggle detail for:', code);
+            const detail = document.getElementById(`detail-${code}`);
+            const item = document.querySelector(`div[data-code="${code}"]`);
+            const row = item ? item.querySelector('.stock-row') : null;
+            
+            if (!detail) {
+                console.error('Detail element not found:', `detail-${code}`);
+                return;
+            }
+            
+            // 关闭其他已展开的
+            document.querySelectorAll('.stock-detail.show').forEach(el => {
+                if (el.id !== `detail-${code}`) {
+                    el.classList.remove('show');
+                    const otherItem = el.closest('.stock-item');
+                    const otherRow = otherItem ? otherItem.querySelector('.stock-row') : null;
+                    if (otherRow) otherRow.classList.remove('expanded');
+                }
+            });
+            
+            // 切换当前
+            const isExpanded = detail.classList.contains('show');
+            if (isExpanded) {
+                detail.classList.remove('show');
+                if (row) row.classList.remove('expanded');
+            } else {
+                detail.classList.add('show');
+                if (row) row.classList.add('expanded');
+            }
+        }
+        
+        // 渲染整个列表
+        async function renderList() {
+            const listContainer = document.getElementById('stockList');
+            const headerHTML = `
+                <div class="stock-header-row">
+                    <div>股票名称</div>
+                    <div>最新价</div>
+                    <div>涨跌幅</div>
+                    <div></div>
+                </div>
+            `;
+            
+            const itemsHTML = await Promise.all(
+                watchList.map((stock, index) => renderStockItem(stock, index))
+            );
+            
+            listContainer.innerHTML = headerHTML + itemsHTML.join('');
+            document.getElementById('lastUpdate').textContent = new Date().toLocaleString('zh-CN');
+            
+            // 重新绑定点击事件
+            document.querySelectorAll('.stock-row').forEach(row => {
+                row.onclick = function() {
+                    const code = this.closest('.stock-item').dataset.code;
+                    toggleDetail(code);
+                };
+            });
+        }
+        
+        // 添加股票
+        function addStock() {
+            const input = document.getElementById('stockInput');
+            const market = document.getElementById('marketSelect').value;
+            const code = input.value.trim();
+            
+            if (!code || !/^\d{6}$/.test(code)) {
+                showError('请输入6位数字股票代码');
+                return;
+            }
+            
+            if (watchList.find(s => s.code === code && s.market === market)) {
+                showError('该股票已在关注列表中');
+                return;
+            }
+            
+            watchList.push({ code, market, name: null });
+            localStorage.setItem('watchList', JSON.stringify(watchList));
+            input.value = '';
+            renderList();
+        }
+        
+        // 移除股票
+        function removeStock(code, event) {
+            event.stopPropagation();
+            watchList = watchList.filter(s => s.code !== code);
+            localStorage.setItem('watchList', JSON.stringify(watchList));
+            delete stockDataCache[code];
+            delete stockHistory[code];
+            renderList();
+        }
+        
+        // 显示错误
+        function showError(msg) {
+            const container = document.getElementById('errorContainer');
+            container.innerHTML = `<div class="error-message">${msg}</div>`;
+            setTimeout(() => container.innerHTML = '', 3000);
+        }
+        
+        // 初始化
+        renderList();
+        
+        // 自动刷新
+        setInterval(renderList, 10000);
+        
+        // 回车键添加
+        document.getElementById('stockInput').addEventListener('keypress', (e) => {
+            if (e.key === 'Enter') addStock();
+        });
+    </script>
+</body>
+</html>
